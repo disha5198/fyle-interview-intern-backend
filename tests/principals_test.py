@@ -1,4 +1,7 @@
 from core.models.assignments import AssignmentStateEnum, GradeEnum
+import json
+import pytest
+from flask import url_for
 
 
 def test_get_assignments(client, h_principal):
@@ -194,5 +197,18 @@ def test_grade_assignment_unauthorized(client):
     )
 
     assert response.status_code == 401
+
+def test_get_assignments(client, h_principal):
+    response = client.get('/principal/assignments', headers=h_principal)
+    assert response.status_code == 200
+    assert 'data' in response.json
+    assert len(response.json['data']) > 0
+
+def test_grade_assignment(client, h_principal):
+    response = client.post('/principal/assignments/grade', headers=h_principal, json={'id': 1, 'grade': GradeEnum.A.value})
+    assert response.status_code == 200
+    assert 'data' in response.json
+    assert response.json['data']['state'] == AssignmentStateEnum.GRADED.value
+    assert response.json['data']['grade'] == GradeEnum.A.value
 
 
