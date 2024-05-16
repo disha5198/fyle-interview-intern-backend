@@ -16,7 +16,7 @@ def test_get_assignments(client, h_principal):
 
 def test_grade_assignment_draft_assignment(client, h_principal):
     """
-    failure case: If an assignment is in Draft state, it cannot be graded by principal
+    Failure case: If an assignment is in Draft state, it cannot be graded by the principal
     """
     response = client.post(
         '/principal/assignments/grade',
@@ -31,26 +31,77 @@ def test_grade_assignment_draft_assignment(client, h_principal):
 
 
 def test_grade_assignment(client, h_principal):
+    """
+    Test grading functionality for a submitted assignment
+    """
+    # Create and submit an assignment first
+    response = client.post(
+        '/student/assignments',
+        headers=h_principal,
+        json={
+            'content': 'Test assignment content'
+        }
+    )
+    assert response.status_code == 200
+    assignment_id = response.json['data']['id']
+
+    # Submit the assignment
+    response = client.post(
+        '/student/assignments/submit',
+        headers=h_principal,
+        json={
+            'id': assignment_id,
+            'teacher_id': 1
+        }
+    )
+    assert response.status_code == 200
+
+    # Now grade the submitted assignment
     response = client.post(
         '/principal/assignments/grade',
         json={
-            'id': 4,
-            'grade': GradeEnum.C.value
+            'id': assignment_id,
+            'grade': GradeEnum.A.value
         },
         headers=h_principal
     )
 
     assert response.status_code == 200
-
     assert response.json['data']['state'] == AssignmentStateEnum.GRADED.value
-    assert response.json['data']['grade'] == GradeEnum.C
+    assert response.json['data']['grade'] == GradeEnum.A
 
 
 def test_regrade_assignment(client, h_principal):
+    """
+    Test regrading functionality for a graded assignment
+    """
+    # Create and submit an assignment first
+    response = client.post(
+        '/student/assignments',
+        headers=h_principal,
+        json={
+            'content': 'Test assignment content'
+        }
+    )
+    assert response.status_code == 200
+    assignment_id = response.json['data']['id']
+
+    # Submit the assignment
+    response = client.post(
+        '/student/assignments/submit',
+        headers=h_principal,
+        json={
+            'id': assignment_id,
+            'teacher_id': 1
+        }
+    )
+    assert response.status_code == 200
+
+    # Grade the submitted assignment
     response = client.post(
         '/principal/assignments/grade',
         json={
-            'id': 4,
+            'id': assignment_id,
             'grade': GradeEnum.B.value
         },
         headers=h_principal
@@ -58,8 +109,19 @@ def test_regrade_assignment(client, h_principal):
 
     assert response.status_code == 200
 
+    # Now regrade the assignment
+    response = client.post(
+        '/principal/assignments/grade',
+        json={
+            'id': assignment_id,
+            'grade': GradeEnum.A.value
+        },
+        headers=h_principal
+    )
+
+    assert response.status_code == 200
     assert response.json['data']['state'] == AssignmentStateEnum.GRADED.value
-    assert response.json['data']['grade'] == GradeEnum.B
+    assert response.json['data']['grade'] == GradeEnum.A
 
 def test_grade_assignment_success(client, h_principal):
     # Assign a grade to a submitted assignment
@@ -132,4 +194,5 @@ def test_grade_assignment_unauthorized(client):
     )
 
     assert response.status_code == 401
+
 
