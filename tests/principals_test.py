@@ -78,6 +78,7 @@ def test_regrade_assignment(client, h_principal):
     """
     Test regrading functionality for a graded assignment
     """
+    print("Headers:", h_principal)
     # Create and submit an assignment first
     response = client.post(
         '/student/assignments',
